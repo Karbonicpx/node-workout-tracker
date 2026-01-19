@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <title>Workout Tracker - Meus Treinos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar Azul -->
+        <div class="sidebar">
+            <div class="logo">
+                <i class="fas fa-dumbbell"></i>
+                <h1>Workout Tracker</h1>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="total-workouts">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="active-workouts">0</div>
+                    <div class="stat-label">Ativos</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="upcoming-workouts">0</div>
+                    <div class="stat-label">Futuros</div>
+                </div>
+            </div>
+            
+            <div class="filters">
+                <h3>Filtros</h3>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">Todos</button>
+                    <button class="filter-btn" data-filter="active">Ativos</button>
+                    <button class="filter-btn" data-filter="inactive">Inativos</button>
+                    <button class="filter-btn" data-filter="upcoming">Futuros</button>
+                </div>
+            </div>
+            
+            <div class="quote">
+                <p>"A consistência é mais importante que a intensidade."</p>
+            </div>
+        </div>
+        
+        <!-- Conteúdo Principal -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-left">
+                    <h2>Meus Treinos</h2>
+                    <p>Gerencie seus planos de exercícios</p>
+                </div>
+                <div class="header-right">
+                    <button class="btn-primary" id="new-workout-btn">
+                        <i class="fas fa-plus"></i> Novo Treino
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Lista de Treinos -->
+            <div class="workouts-container">
+                <div class="workouts-grid" id="workouts-list">
+                    <!-- Treinos serão carregados aqui -->
+                </div>
+                
+                <div class="empty-state" id="empty-state">
+                    <i class="fas fa-dumbbell"></i>
+                    <h3>Nenhum treino encontrado</h3>
+                    <p>Crie seu primeiro treino ou ajuste os filtros</p>
+                    <button class="btn-primary" id="first-workout-btn">
+                        <i class="fas fa-plus"></i> Criar Primeiro Treino
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para Criar/Editar Treino -->
+    <div class="modal" id="workout-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Novo Treino</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="workout-form">
+                    <input type="hidden" id="workout-id">
+                    
+                    <div class="form-group">
+                        <label for="workout-name">
+                            <i class="fas fa-heading"></i> Nome do Treino *
+                        </label>
+                        <input type="text" id="workout-name" placeholder="Ex: Treino de Peito" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="workout-type">
+                                <i class="fas fa-tag"></i> Tipo
+                            </label>
+                            <select id="workout-type">
+                                <option value="peito">Peito</option>
+                                <option value="costas">Costas</option>
+                                <option value="pernas">Pernas</option>
+                                <option value="ombros">Ombros</option>
+                                <option value="braços">Braços</option>
+                                <option value="fullbody">Full Body</option>
+                                <option value="cardio">Cardio</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="workout-duration">
+                                <i class="fas fa-clock"></i> Duração (min) *
+                            </label>
+                            <input type="number" id="workout-duration" min="15" max="180" value="60" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="workout-date">
+                                <i class="fas fa-calendar"></i> Data do Treino *
+                            </label>
+                            <input type="date" id="workout-date" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="workout-status">
+                                <i class="fas fa-power-off"></i> Status
+                            </label>
+                            <select id="workout-status">
+                                <option value="active">Ativo</option>
+                                <option value="inactive">Inativo</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="workout-description">
+                            <i class="fas fa-align-left"></i> Descrição
+                        </label>
+                        <textarea id="workout-description" placeholder="Descreva seu treino..." rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="workout-exercises">
+                            <i class="fas fa-dumbbell"></i> Exercícios (separados por vírgula)
+                        </label>
+                        <textarea id="workout-exercises" placeholder="Ex: Supino Reto, Flexão, Tríceps Corda" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary close-modal">Cancelar</button>
+                        <button type="submit" class="btn-primary">Salvar Treino</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="script.js"></script>
+</body>
+</html>

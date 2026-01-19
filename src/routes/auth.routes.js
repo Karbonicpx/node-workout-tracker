@@ -9,7 +9,8 @@ function generateAccessToken(user) {
 
     // Serializing the user in jwt with a json object
     // Secret key should be in .env file, with strong random value
-    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '10m' });
+    // Using temporary hard coded string for the key, change later!
+    return jwt.sign(user, 'kdjgbkjdjgnlervevçle', { expiresIn: '10m' });
 }
 
 
@@ -43,7 +44,8 @@ router.post('/login', (req, res) => {
     const accessToken = generateAccessToken({ username: user.username, email: user.email });
 
     // Creating a new token from the refresh token (does not expire as quickly as access token)
-    const refreshToken = jwt.sign({ username: user.username, email: user.email}, process.env.REFRESH_TOKEN_SECRET);
+    // Using temporary hard coded string for the key, change later!
+    const refreshToken = jwt.sign({ username: user.username, email: user.email}, 'daxdazdfzcafzvaggzavggx');
 
 
     console.log(`User ${user.username} logged in successfully`);
@@ -58,4 +60,3 @@ router.post('/login', (req, res) => {
 
 
 module.exports = router;
-

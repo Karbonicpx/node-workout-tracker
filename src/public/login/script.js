@@ -130,8 +130,7 @@ loginForm.addEventListener('submit', async (e) => {
         showNotification('Login realizado com sucesso!');
         loginForm.reset();
 
-        // Exemplo de redirecionamento
-        // window.location.href = '/dashboard.html';
+        window.location.href = '../home/index.html';
 
     } catch (error) {
         console.error(error);
