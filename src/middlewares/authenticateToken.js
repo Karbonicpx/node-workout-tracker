@@ -13,7 +13,7 @@ function authenticateToken(req, res, next) {
 
     // If the token is not null, then it is verified. We use the 'verify' function to do so
     // It takes the token, the secret key and a callback function with error and user params
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    jwt.verify(token, 'kdjgbkjdjgnlervevçle',(err, user) => {
         if (err) return res.sendStatus(403); // if token is no longer valid
         req.user = user;
         next(); // pass the execution to the next middleware

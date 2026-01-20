@@ -1,4 +1,5 @@
 require('dotenv').config();
+const User = require('../utils/userObj');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const users = require('../data/users');
@@ -21,8 +22,8 @@ router.post('/register', (req, res) => {
 
     // In a real application, you would save the user to the database here
     const id = users.length + 1;
-    users.push({ id, username, email, password });
-
+    const newUser = new User(id, username, email, password);
+    users.push(newUser);
     res.status(201).json({ message: 'User registered successfully' });
 });
 
@@ -33,20 +34,20 @@ router.post('/login', (req, res) => {
     
     const user = users.find(u => u.email === email);
 
+    console.log(user);
     if (!user) {
         return res.status(401).json({ message: 'User not found' });
     }
 
     if (user.password !== password) {
-        return res.status(401).json({ message: 'Senha incorreta' });
+        return res.status(401).json({ message: 'Incorrect Password' });
     }
 
-    const accessToken = generateAccessToken({ username: user.username, email: user.email });
+    const accessToken = generateAccessToken({ id: user.id, username: user.username, email: user.email });
 
     // Creating a new token from the refresh token (does not expire as quickly as access token)
     // Using temporary hard coded string for the key, change later!
-    const refreshToken = jwt.sign({ username: user.username, email: user.email}, 'daxdazdfzcafzvaggzavggx');
-
+    const refreshToken = jwt.sign({ id: user.id, username: user.username, email: user.email}, 'daxdazdfzcafzvaggzavggx');
 
     console.log(`User ${user.username} logged in successfully`);
     // What this res.json below basically does is to create a token that contains the user info
