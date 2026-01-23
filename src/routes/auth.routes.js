@@ -34,7 +34,6 @@ router.post('/login', (req, res) => {
     
     const user = users.find(u => u.email === email);
 
-    console.log(user);
     if (!user) {
         return res.status(401).json({ message: 'User not found' });
     }
@@ -49,7 +48,7 @@ router.post('/login', (req, res) => {
     // Using temporary hard coded string for the key, change later!
     const refreshToken = jwt.sign({ id: user.id, username: user.username, email: user.email}, 'daxdazdfzcafzvaggzavggx');
 
-    console.log(`User ${user.username} logged in successfully`);
+    console.log(`User ${user.username} logged in successfully\n`);
     // What this res.json below basically does is to create a token that contains the user info
     // and is signed with the secret key, so that later we can verify the token
     // and extract the user info from it

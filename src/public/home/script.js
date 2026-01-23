@@ -13,7 +13,41 @@ const upcomingWorkoutsEl = document.getElementById('upcoming-workouts');
 const filterButtons = document.querySelectorAll('.filter-btn');
 let currentFilter = 'all';
 
-// Dados iniciais (com exemplos mais completos)
+
+// Getting all user workouts
+async function getUserWorkouts() {
+    try {
+        // Get token from localStorage
+        const token = localStorage.getItem('accessToken');
+
+        if (!token) {
+            console.error('No access token found');
+            return;
+        }
+
+        const response = await fetch('http://localhost:3000/users/me/workouts', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            console.error('Request failed:', response.status);
+            return;
+        }
+
+        const workouts = await response.json();
+        console.log(JSON.stringify(workouts));
+        return JSON.stringify(workouts);
+
+    } catch (error) {
+        console.error('Error fetching workouts:', error);
+    }
+}
+
+
 let workouts = JSON.parse(localStorage.getItem('workouts')) || [
     {
         id: 1,
