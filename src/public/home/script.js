@@ -11,15 +11,16 @@ const totalWorkoutsEl = document.getElementById('total-workouts');
 const activeWorkoutsEl = document.getElementById('active-workouts');
 const upcomingWorkoutsEl = document.getElementById('upcoming-workouts');
 const filterButtons = document.querySelectorAll('.filter-btn');
+const submitButton = document.getElementById('submit-workout-btn');
 let currentFilter = 'all';
 
+// Get token from localStorage
+const token = localStorage.getItem('accessToken');
 
 // Getting all user workouts
 async function getUserWorkouts() {
     try {
-        // Get token from localStorage
-        const token = localStorage.getItem('accessToken');
-
+        
         if (!token) {
             console.error('No access token found');
             return;
@@ -44,6 +45,59 @@ async function getUserWorkouts() {
 
     } catch (error) {
         console.error('Error fetching workouts:', error);
+    }
+}
+// Creating user workout and pushing to the backend
+async function createUserWorkout(){
+
+    // Getting all values to the req body
+    const title = document.getElementById('workout-name').value;
+    const type = document.getElementById('workout-type').value;
+    const duration = document.getElementById('workout-duration').value;
+    const date = document.getElementById('workout-date').value;
+    const status = document.getElementById('workout-status').value;
+    const description = document.getElementById('workout-description').value;
+    const exercises = document
+        .getElementById('workout-exercises')
+        .value
+        .split(',')
+        .map(e => e.trim());
+
+
+    try {
+        
+        if (!token) {
+            console.error('No access token found');
+            return;
+        }
+
+        const response = await fetch('http://localhost:3000/users/me/workouts', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                title,
+                type,
+                duration,
+                date,
+                status,
+                description,
+                exercises
+            })
+        });
+
+        if (!response.ok) {
+            console.error('Request failed:', response.status);
+            return;
+        }
+
+        const workout = await response.json();
+        return workout;
+
+    } catch (error) {
+        console.error('Error creating workout: ', error);
     }
 }
 
@@ -101,40 +155,17 @@ document.addEventListener('DOMContentLoaded', function() {
     setupFilters();
 });
 
-// Funções auxiliares para datas
-function getTodayDate() {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-}
 
-function getTomorrowDate() {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
-}
+workoutForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    
+    createUserWorkout();
+    renderWorkouts();
+    updateStats();
+    closeWorkoutModal();
+    console.log(createUserWorkout());
+});
 
-function getNextWeekDate() {
-    const nextWeek = new Date();
-    nextWeek.setDate(nextWeek.getDate() + 7);
-    return nextWeek.toISOString().split('T')[0];
-}
-
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-        weekday: 'short',
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-    });
-}
-
-function isFutureDate(dateString) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const workoutDate = new Date(dateString);
-    return workoutDate > today;
-}
 
 // Abrir modal para criar novo treino
 newWorkoutBtn.addEventListener('click', openWorkoutModalCreate);
@@ -147,6 +178,9 @@ function openWorkoutModalCreate() {
     document.getElementById('workout-date').value = getTodayDate();
     workoutModal.classList.add('active');
     document.getElementById('workout-name').focus();
+
+    // When the modal opens for creating a workout, sets the event of the button to create workout
+    
 }
 
 // Abrir modal para editar treino
@@ -202,6 +236,7 @@ function setupFilters() {
 }
 
 // Salvar/Criar treino
+/*
 workoutForm.addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -242,6 +277,7 @@ workoutForm.addEventListener('submit', function(e) {
         workoutsList.style.display = 'grid';
     }
 });
+*/
 
 // Renderizar lista de treinos com filtro
 function renderWorkouts() {
@@ -373,4 +409,40 @@ function updateStats() {
 // Salvar no localStorage
 function saveWorkouts() {
     localStorage.setItem('workouts', JSON.stringify(workouts));
+}
+
+
+// Funções auxiliares para datas
+function getTodayDate() {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+}
+
+function getTomorrowDate() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+}
+
+function getNextWeekDate() {
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    return nextWeek.toISOString().split('T')[0];
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    });
+}
+
+function isFutureDate(dateString) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const workoutDate = new Date(dateString);
+    return workoutDate > today;
 }
