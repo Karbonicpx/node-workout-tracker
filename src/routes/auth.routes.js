@@ -11,7 +11,7 @@ function generateAccessToken(user) {
     // Serializing the user in jwt with a json object
     // Secret key should be in .env file, with strong random value
     // Using temporary hard coded string for the key, change later!
-    return jwt.sign(user, 'kdjgbkjdjgnlervevçle', { expiresIn: '10m' });
+    return jwt.sign(user, 'kdjgbkjdjgnlervevçle', { expiresIn: '30m' });
 }
 
 

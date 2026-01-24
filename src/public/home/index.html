@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="utf-8">
     <title>Workout Tracker - Meus Treinos</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
+
 <body>
     <div class="container">
         <!-- Sidebar Azul -->
@@ -17,7 +20,23 @@
                 <i class="fas fa-dumbbell"></i>
                 <h1>Workout Tracker</h1>
             </div>
-            
+
+            <!-- Seção do Usuário (NOVA) -->
+            <div class="user-section">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name" id="user-name">Carregando...</div>
+                        <div class="user-status">Online</div>
+                    </div>
+                </div>
+                <button class="logout-btn" id="logout-btn" title="Sair">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+
             <div class="stats">
                 <div class="stat-item">
                     <div class="stat-number" id="total-workouts">0</div>
@@ -32,7 +51,7 @@
                     <div class="stat-label">Futuros</div>
                 </div>
             </div>
-            
+
             <div class="filters">
                 <h3>Filtros</h3>
                 <div class="filter-buttons">
@@ -42,12 +61,12 @@
                     <button class="filter-btn" data-filter="upcoming">Futuros</button>
                 </div>
             </div>
-            
+
             <div class="quote">
                 <p>"A consistência é mais importante que a intensidade."</p>
             </div>
         </div>
-        
+
         <!-- Conteúdo Principal -->
         <div class="main-content">
             <!-- Header -->
@@ -62,25 +81,27 @@
                     </button>
                 </div>
             </div>
-            
+
             <!-- Lista de Treinos -->
             <div class="workouts-container">
                 <div class="workouts-grid" id="workouts-list">
                     <!-- Treinos serão carregados aqui -->
                 </div>
-                
+
                 <div class="empty-state" id="empty-state">
-                    <i class="fas fa-dumbbell"></i>
-                    <h3>Nenhum treino encontrado</h3>
-                    <p>Crie seu primeiro treino ou ajuste os filtros</p>
-                    <button class="btn-primary" id="first-workout-btn">
-                        <i class="fas fa-plus"></i> Criar Primeiro Treino
-                    </button>
+                    <div class="empty-state-content">
+                        <i class="fas fa-dumbbell"></i>
+                        <h3>Nenhum treino encontrado</h3>
+                        <p>Crie seu primeiro treino ou ajuste os filtros</p>
+                        <button class="btn-primary" id="first-workout-btn">
+                            <i class="fas fa-plus"></i> Criar Primeiro Treino
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <!-- Modal para Criar/Editar Treino -->
     <div class="modal" id="workout-modal">
         <div class="modal-content">
@@ -91,14 +112,14 @@
             <div class="modal-body">
                 <form id="workout-form">
                     <input type="hidden" id="workout-id">
-                    
+
                     <div class="form-group">
                         <label for="workout-name">
                             <i class="fas fa-heading"></i> Nome do Treino *
                         </label>
                         <input type="text" id="workout-name" placeholder="Ex: Treino de Peito" required>
                     </div>
-                    
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="workout-type">
@@ -114,7 +135,7 @@
                                 <option value="cardio">Cardio</option>
                             </select>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="workout-duration">
                                 <i class="fas fa-clock"></i> Duração (min) *
@@ -122,7 +143,7 @@
                             <input type="number" id="workout-duration" min="15" max="180" value="60" required>
                         </div>
                     </div>
-                    
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="workout-date">
@@ -130,7 +151,7 @@
                             </label>
                             <input type="date" id="workout-date" required>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="workout-status">
                                 <i class="fas fa-power-off"></i> Status
@@ -141,24 +162,57 @@
                             </select>
                         </div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="workout-description">
                             <i class="fas fa-align-left"></i> Descrição
                         </label>
                         <textarea id="workout-description" placeholder="Descreva seu treino..." rows="3"></textarea>
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="workout-exercises">
-                            <i class="fas fa-dumbbell"></i> Exercícios (separados por vírgula)
-                        </label>
-                        <textarea id="workout-exercises" placeholder="Ex: Supino Reto, Flexão, Tríceps Corda" rows="3"></textarea>
+
+                    <!-- Seção de Exercícios -->
+                    <div class="exercises-section">
+                        <div class="section-header">
+                            <h4><i class="fas fa-dumbbell"></i> Exercícios</h4>
+                            <button type="button" class="btn-small" id="add-exercise-btn">
+                                <i class="fas fa-plus"></i> Adicionar Exercício
+                            </button>
+                        </div>
+
+                        <div id="exercises-container">
+                            <!-- Exercícios serão adicionados aqui dinamicamente -->
+                            <div class="exercise-item" data-exercise-index="0">
+                                <div class="form-row">
+                                    <div class="form-group" style="flex: 2;">
+                                        <label>Nome do Exercício</label>
+                                        <input type="text" class="exercise-name" placeholder="Ex: Supino Reto" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Sets</label>
+                                        <input type="number" class="exercise-sets" min="1" max="10" value="3" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Reps</label>
+                                        <input type="number" class="exercise-reps" min="1" max="50" value="10" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Peso (kg)</label>
+                                        <input type="number" class="exercise-weight" min="0" step="0.5" value="0">
+                                    </div>
+                                    <div class="form-group" style="width: 40px;">
+                                        <label>&nbsp;</label>
+                                        <button type="button" class="remove-exercise-btn" style="display: none;">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    
+
                     <div class="modal-footer">
                         <button type="button" class="btn-secondary close-modal">Cancelar</button>
-                        <button type="submit" id="submit-workout-btn"class="btn-primary">Salvar Treino</button>
+                        <button type="submit" id="submit-workout-btn" class="btn-primary">Salvar Treino</button>
                     </div>
                 </form>
             </div>
@@ -168,4 +222,5 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="script.js"></script>
 </body>
+
 </html>

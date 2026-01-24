@@ -32,7 +32,7 @@ router.post('/me/workouts', authenticateToken, (req, res) => {
   if (!user) return res.status(404).json({ message: 'User not found' });
 
   user.addWorkout(req.body);
-  res.status(201).json({message: "Workout added succesfully! "});
+  res.status(201).json({message: "Workout added succesfully!"});
 
 });
 
