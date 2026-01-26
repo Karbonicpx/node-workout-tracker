@@ -7,7 +7,6 @@ class User {
     this.workouts = workouts;
   }
 
-  // Transform all relevant data to json (for using in API requests)
   toJSON() {
     return {
       id: this.id,
@@ -17,36 +16,53 @@ class User {
     };
   }
 
-  // Adds new workout to the user
-  addWorkout({ title, date, duration, description, active}) {
-    const workoutId = this.workouts.length + 1;
-
-    this.workouts.push({
+  // Adds new workout
+  addWorkout(workoutData) {
+    const workoutId = this.workouts.length > 0 
+      ? Math.max(...this.workouts.map(w => w.id)) + 1 
+      : 1;
+    
+    const newWorkout = {
       id: workoutId,
-      title,
-      date,
-      duration,
-      description,
-      active,
-      exercises: []
-    });
+      title: workoutData.title,
+      type: workoutData.type,
+      duration: workoutData.duration,
+      date: workoutData.date,
+      status: workoutData.status,
+      description: workoutData.description || '',
+      exercises: workoutData.exercises || []
+    };
+    
+    this.workouts.push(newWorkout);
+    return newWorkout;
   }
 
-  // Adds an exercise to a workout for the user
-  addExercise(workoutId, { name, sets, reps, weight }) {
-    const workout = this.workouts.find(w => w.id === workoutId);
-    if (!workout) return false;
+  // Find workout by id
+  findWorkoutById(workoutId) {
+    return this.workouts.find(w => w.id === workoutId);
+  }
 
-    const exerciseId = workout.exercises.length + 1;
-
-    workout.exercises.push({
-      id: exerciseId,
-      name,
-      sets,
-      reps,
-      weight
+  // Updates workout
+  updateWorkout(workoutId, workoutData) {
+    const workout = this.findWorkoutById(workoutId);
+    if (!workout) return null;
+    
+    // Update only with the data provided
+    Object.keys(workoutData).forEach(key => {
+      if (workoutData[key] !== undefined) {
+        workout[key] = workoutData[key];
+      }
     });
+    
+    return workout;
+  }
 
+  // Remove workout
+  removeWorkout(workoutId) {
+    const index = this.workouts.findIndex(w => w.id === workoutId);
+    if (index === -1) return false;
+    
+    this.workouts.splice(index, 1);
     return true;
   }
 }

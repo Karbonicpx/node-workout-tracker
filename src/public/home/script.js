@@ -41,7 +41,7 @@ function checkAuth() {
             // Token expired
             localStorage.removeItem('accessToken');
             localStorage.removeItem('username');
-            window.location.href = 'login.html';
+            window.location.href = '../login/index.html';
             return false;
         }
         
@@ -51,7 +51,7 @@ function checkAuth() {
         // If error, remove invalid token
         localStorage.removeItem('accessToken');
         localStorage.removeItem('username');
-        window.location.href = 'login.html';
+        window.location.href = '../login/index.html';
         return false;
     }
 }
@@ -91,7 +91,6 @@ async function loadUserData() {
 
         if (!response.ok) {
             console.error('Failed to load user data:', response.status);
-            // Tenta obter o username do token se a API falhar
             const username = getUsernameFromToken();
             if (username) {
                 userNameEl.textContent = username;
@@ -104,17 +103,14 @@ async function loadUserData() {
         // Show username
         if (userData.username) {
             userNameEl.textContent = userData.username;
-            // Load username in localStorage for offline use
             localStorage.setItem('username', userData.username);
         } else if (userData.email) {
-            // Usa email if username is not present
             userNameEl.textContent = userData.email.split('@')[0];
             localStorage.setItem('username', userData.email.split('@')[0]);
         }
         
     } catch (error) {
         console.error('Error loading user data:', error);
-        // Try getting username from localStorage/token
         const savedUsername = localStorage.getItem('username');
         const tokenUsername = getUsernameFromToken();
         
@@ -131,11 +127,8 @@ async function loadUserData() {
 // Function to user logout
 function handleLogout() {
     if (confirm('Tem certeza que deseja sair?')) {
-        // Remove auth data
         localStorage.removeItem('accessToken');
         localStorage.removeItem('username');
-        
-        // Redirect to login page
         window.location.href = '../login/index.html';
     }
 }
@@ -167,17 +160,14 @@ function isFutureDate(dateString) {
 document.addEventListener('DOMContentLoaded', function() {
     if (!checkAuth()) return;
     
-    // Today date as default input
     const dateInput = document.getElementById('workout-date');
     if (dateInput) {
         dateInput.value = getTodayDate();
     }
     
-    // Load user data and workouts
     loadUserData();
     loadWorkouts();
     
-    // Adding event listeners
     newWorkoutBtn.addEventListener('click', function(e) {
         e.preventDefault();
         openWorkoutModalCreate();
@@ -188,13 +178,10 @@ document.addEventListener('DOMContentLoaded', function() {
         openWorkoutModalCreate();
     });
     
-    // Add exercise button
     addExerciseBtn.addEventListener('click', addExerciseField);
     
-    // Logout button
     logoutBtn.addEventListener('click', handleLogout);
     
-    // Close create/edit modal
     closeModalButtons.forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
@@ -202,17 +189,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Closing modal when clicking outside the modal
     workoutModal.addEventListener('click', function(e) {
         if (e.target === workoutModal) {
             closeWorkoutModal();
         }
     });
     
-    // Event listener for the form
     workoutForm.addEventListener('submit', handleFormSubmit);
     
-    // Adding filters
     filterButtons.forEach(button => {
         button.addEventListener('click', function() {
             filterButtons.forEach(btn => btn.classList.remove('active'));
@@ -222,22 +206,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Can close the modal with ESC too
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && workoutModal.classList.contains('active')) {
             closeWorkoutModal();
         }
     });
     
-    // Delegation for remove exercise buttons
     exercisesContainer.addEventListener('click', function(e) {
         if (e.target.closest('.remove-exercise-btn')) {
             e.preventDefault();
             const exerciseItem = e.target.closest('.exercise-item');
             if (exerciseItem) {
                 exerciseItem.remove();
-                // Update exercise indices
-                updateExerciseIndices();
+                updateExerciseIndexes();
             }
         }
     });
@@ -278,7 +259,7 @@ function addExerciseField() {
     
     exercisesContainer.insertAdjacentHTML('beforeend', exerciseHTML);
     
-    // Show remove button on first exercise if there are multiple
+    // Show remove button if there is more than one
     if (exerciseCounter > 1) {
         const firstRemoveBtn = exercisesContainer.querySelector('.exercise-item:first-child .remove-exercise-btn');
         if (firstRemoveBtn) {
@@ -287,19 +268,18 @@ function addExerciseField() {
     }
 }
 
-// Function to update exercise indices after removal
-function updateExerciseIndices() {
+// Function to update exercise indexes after removal
+function updateExerciseIndexes() {
     const exerciseItems = exercisesContainer.querySelectorAll('.exercise-item');
     exerciseItems.forEach((item, index) => {
         item.setAttribute('data-exercise-index', index);
-        // Hide remove button if only one exercise remains
-        if (exerciseItems.length === 1) {
-            const removeBtn = item.querySelector('.remove-exercise-btn');
-            if (removeBtn) {
-                removeBtn.style.display = 'none';
-            }
+        const removeBtn = item.querySelector('.remove-exercise-btn');
+        if (removeBtn) {
+            // Show remove button if there is more than 1 exercise
+            removeBtn.style.display = exerciseItems.length > 1 ? 'block' : 'none';
         }
     });
+    exerciseCounter = exerciseItems.length;
 }
 
 // Function to collect exercise data from form
@@ -307,14 +287,15 @@ function collectExercisesData() {
     const exerciseItems = exercisesContainer.querySelectorAll('.exercise-item');
     const exercises = [];
     
-    exerciseItems.forEach(item => {
+    exerciseItems.forEach((item, index) => {
         const name = item.querySelector('.exercise-name').value.trim();
-        const sets = parseInt(item.querySelector('.exercise-sets').value);
-        const reps = parseInt(item.querySelector('.exercise-reps').value);
-        const weight = parseFloat(item.querySelector('.exercise-weight').value);
+        const sets = parseInt(item.querySelector('.exercise-sets').value) || 0;
+        const reps = parseInt(item.querySelector('.exercise-reps').value) || 0;
+        const weight = parseFloat(item.querySelector('.exercise-weight').value) || 0;
         
         if (name) {
             exercises.push({
+                id: index + 1, // Add new index for each exercise
                 name: name,
                 sets: sets,
                 reps: reps,
@@ -328,12 +309,13 @@ function collectExercisesData() {
 
 // Function to populate exercise fields from workout data
 function populateExercisesFields(exercises) {
-    // Clear existing exercise fields except the first one
+    // Limpa todos os campos de exercício
     exercisesContainer.innerHTML = '';
     exerciseCounter = 0;
     
     if (exercises && exercises.length > 0) {
         exercises.forEach((exercise, index) => {
+            exerciseCounter++;
             const exerciseHTML = `
                 <div class="exercise-item" data-exercise-index="${index}">
                     <div class="form-row">
@@ -369,10 +351,9 @@ function populateExercisesFields(exercises) {
             `;
             
             exercisesContainer.insertAdjacentHTML('beforeend', exerciseHTML);
-            exerciseCounter = index;
         });
     } else {
-        // Add one empty exercise field
+        // Adiciona um campo de exercício vazio
         addExerciseField();
     }
 }
@@ -415,6 +396,8 @@ async function createUserWorkout(workoutData) {
             return null;
         }
 
+        console.log('Enviando dados para criação:', workoutData);
+
         const response = await fetch('http://localhost:3000/users/me/workouts', {
             method: 'POST',
             headers: {
@@ -431,6 +414,7 @@ async function createUserWorkout(workoutData) {
         }
 
         const workout = await response.json();
+        console.log('Treino criado com sucesso:', workout);
         return workout;
 
     } catch (error) {
@@ -446,6 +430,8 @@ async function updateUserWorkout(workoutId, workoutData) {
             console.error('No access token found');
             return null;
         }
+
+        console.log('Enviando dados para atualização:', workoutData);
 
         const response = await fetch(`http://localhost:3000/users/me/workouts/${workoutId}`, {
             method: 'PUT',
@@ -463,6 +449,7 @@ async function updateUserWorkout(workoutId, workoutData) {
         }
 
         const workout = await response.json();
+        console.log('Treino atualizado com sucesso:', workout);
         return workout;
 
     } catch (error) {
@@ -505,7 +492,7 @@ function openWorkoutModalCreate() {
     workoutForm.reset();
     document.getElementById('workout-id').value = '';
     document.getElementById('workout-date').value = getTodayDate();
-    document.getElementById('workout-status').value = 'active';
+    document.getElementById('workout-status').value = 'active'; // FORÇA ativo como padrão
     
     // Reset exercise fields
     exercisesContainer.innerHTML = '';
@@ -527,6 +514,8 @@ async function openWorkoutModalEdit(workoutId) {
             alert('Treino não encontrado');
             return;
         }
+        
+        console.log('Carregando treino para edição:', workout);
         
         modalTitle.textContent = "Editar Treino";
         document.getElementById('workout-id').value = workout.id;
@@ -560,8 +549,8 @@ function closeWorkoutModal() {
 async function loadWorkouts() {
     try {
         const workouts = await getUserWorkouts();
+        console.log('Treinos carregados:', workouts);
         
-        // Filter workouts based on the current filters
         let filteredWorkouts = workouts;
         const today = new Date().toISOString().split('T')[0];
         
@@ -578,25 +567,9 @@ async function loadWorkouts() {
         
     } catch (error) {
         console.error('Error loading workouts:', error);
-        // Show empty state if error
         workoutsList.innerHTML = '';
         emptyState.style.display = 'flex';
     }
-}
-
-// Function to format exercise display text
-function formatExerciseText(exercise) {
-    if (!exercise) return '';
-    
-    let text = exercise.name;
-    if (exercise.sets || exercise.reps) {
-        text += ` (${exercise.sets || 0}x${exercise.reps || 0}`;
-        if (exercise.weight && exercise.weight > 0) {
-            text += ` @ ${exercise.weight}kg`;
-        }
-        text += ')';
-    }
-    return text;
 }
 
 // Rendering workouts by creating new DOM elements
@@ -607,11 +580,9 @@ function renderWorkouts(workouts) {
         return;
     }
     
-    // Hiding the empty state if there is 1 or more workouts
     emptyState.style.display = 'none';
     
     workoutsList.innerHTML = workouts.map(workout => {
-        // Formating labels
         const typeDisplay = {
             'peito': 'Peito',
             'costas': 'Costas',
@@ -622,17 +593,14 @@ function renderWorkouts(workouts) {
             'cardio': 'Cardio'
         };
         
-        // Workout classes (based on the status)
         let cardClasses = 'workout-card';
         if (workout.status === 'active') cardClasses += ' active';
         if (workout.status === 'inactive') cardClasses += ' inactive';
         if (isFutureDate(workout.date)) cardClasses += ' upcoming';
         
-        // Status classes
         const statusClass = workout.status === 'active' ? 'status-active' : 'status-inactive';
         const statusText = workout.status === 'active' ? 'Ativo' : 'Inativo';
         
-        // Creating DOM elements of the cards
         return `
             <div class="${cardClasses}">
                 <div class="workout-header">
@@ -697,42 +665,41 @@ function renderWorkouts(workouts) {
 async function handleFormSubmit(e) {
     e.preventDefault();
     
-    // Validating data
     const workoutName = document.getElementById('workout-name').value;
     const workoutDate = document.getElementById('workout-date').value;
     const workoutDuration = document.getElementById('workout-duration').value;
+    const workoutStatus = document.getElementById('workout-status').value;
     
     if (!workoutName.trim()) {
         alert('Por favor, insira um nome para o treino');
         return;
     }
     
-    // Collect exercises data
     const exercises = collectExercisesData();
     if (exercises.length === 0) {
         alert('Por favor, adicione pelo menos um exercício');
         return;
     }
     
-    // Loading data
+    // CORRIGIDO: Estrutura correta dos dados
     const workoutData = {
         title: workoutName,
         type: document.getElementById('workout-type').value,
         duration: parseInt(workoutDuration),
         date: workoutDate,
-        status: document.getElementById('workout-status').value,
+        status: workoutStatus, // Usa o valor do select
         description: document.getElementById('workout-description').value,
         exercises: exercises
     };
     
+    console.log('Dados preparados para envio:', workoutData);
+    
     try {
-        // Disabling button when pulling a request
         const submitBtn = document.getElementById('submit-workout-btn');
         const originalText = submitBtn.textContent;
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
         
-        // Saving workout (if there is a valid id, use the update function, if not, create)
         let result;
         if (editingWorkoutId) {
             result = await updateUserWorkout(editingWorkoutId, workoutData);
@@ -740,11 +707,9 @@ async function handleFormSubmit(e) {
             result = await createUserWorkout(workoutData);
         }
     
-        // Reloading list and closing modal
         await loadWorkouts();
         closeWorkoutModal();
         
-        // Renabling button
         submitBtn.disabled = false;
         submitBtn.textContent = originalText;
         
@@ -752,7 +717,6 @@ async function handleFormSubmit(e) {
         console.error('Error saving workout:', error);
         alert('Erro ao salvar treino: ' + error.message);
         
-        // Renabling button if error
         const submitBtn = document.getElementById('submit-workout-btn');
         submitBtn.disabled = false;
         submitBtn.textContent = 'Salvar Treino';
@@ -780,11 +744,9 @@ function updateStats(workouts) {
     
     totalWorkoutsEl.textContent = workouts.length;
     
-    // Calculating active workouts
     const activeCount = workouts.filter(w => w.status === 'active').length;
     activeWorkoutsEl.textContent = activeCount;
     
-    // Calculating upcoming workouts
     const upcomingCount = workouts.filter(w => isFutureDate(w.date)).length;
     upcomingWorkoutsEl.textContent = upcomingCount;
 }
