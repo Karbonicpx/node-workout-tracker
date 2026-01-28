@@ -204,9 +204,6 @@ registerForm.addEventListener('submit', async (e) => {
         console.error(error);
         showNotification('Erro ao conectar com o servidor', false);
     }
-    
-
-    // BACKEND REGISTER
 
     // Simulação de registro bem-sucedido
     showNotification(`Conta criada com sucesso! Sua senha é ${passwordStrength}.`);
