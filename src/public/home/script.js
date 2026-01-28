@@ -31,14 +31,11 @@ function checkAuth() {
     }
     
     try {
-        // Token req
         const payload = token.split('.')[1];
         const decodedPayload = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
         
-        // Verifying if the token expired
         const currentTime = Math.floor(Date.now() / 1000);
         if (decodedPayload.exp && decodedPayload.exp < currentTime) {
-            // Token expired
             localStorage.removeItem('accessToken');
             localStorage.removeItem('username');
             window.location.href = '../login/index.html';
@@ -48,7 +45,6 @@ function checkAuth() {
         return true;
     } catch (error) {
         console.error('Error checking auth:', error);
-        // If error, remove invalid token
         localStorage.removeItem('accessToken');
         localStorage.removeItem('username');
         window.location.href = '../login/index.html';
@@ -61,7 +57,6 @@ function getUsernameFromToken() {
     try {
         if (!token) return null;
         
-        // Decoding JWT
         const payload = token.split('.')[1];
         const decodedPayload = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
         const userData = JSON.parse(decodedPayload);
@@ -100,7 +95,6 @@ async function loadUserData() {
 
         const userData = await response.json();
         
-        // Show username
         if (userData.username) {
             userNameEl.textContent = userData.username;
             localStorage.setItem('username', userData.username);
@@ -212,15 +206,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    exercisesContainer.addEventListener('click', function(e) {
-        if (e.target.closest('.remove-exercise-btn')) {
-            e.preventDefault();
-            const exerciseItem = e.target.closest('.exercise-item');
-            if (exerciseItem) {
-                exerciseItem.remove();
-                updateExerciseIndexes();
-            }
-        }
+    exercisesContainer.addEventListener('click', async function(e) {
+        const removeBtn = e.target.closest('.remove-exercise-btn');
+        if (!removeBtn) return;
+
+        const exerciseItem = removeBtn.closest('.exercise-item');
+        
+        exerciseItem.remove();
+        updateExerciseIndices();
     });
 });
 
@@ -269,13 +262,12 @@ function addExerciseField() {
 }
 
 // Function to update exercise indexes after removal
-function updateExerciseIndexes() {
+function updateExerciseIndices() {
     const exerciseItems = exercisesContainer.querySelectorAll('.exercise-item');
     exerciseItems.forEach((item, index) => {
         item.setAttribute('data-exercise-index', index);
         const removeBtn = item.querySelector('.remove-exercise-btn');
         if (removeBtn) {
-            // Show remove button if there is more than 1 exercise
             removeBtn.style.display = exerciseItems.length > 1 ? 'block' : 'none';
         }
     });
@@ -287,7 +279,7 @@ function collectExercisesData() {
     const exerciseItems = exercisesContainer.querySelectorAll('.exercise-item');
     const exercises = [];
     
-    exerciseItems.forEach((item, index) => {
+    exerciseItems.forEach((item) => {
         const name = item.querySelector('.exercise-name').value.trim();
         const sets = parseInt(item.querySelector('.exercise-sets').value) || 0;
         const reps = parseInt(item.querySelector('.exercise-reps').value) || 0;
@@ -295,11 +287,10 @@ function collectExercisesData() {
         
         if (name) {
             exercises.push({
-                id: index + 1, // Add new index for each exercise
-                name: name,
-                sets: sets,
-                reps: reps,
-                weight: weight
+                name,
+                sets,
+                reps,
+                weight
             });
         }
     });
@@ -309,53 +300,49 @@ function collectExercisesData() {
 
 // Function to populate exercise fields from workout data
 function populateExercisesFields(exercises) {
-    // Limpa todos os campos de exercício
     exercisesContainer.innerHTML = '';
     exerciseCounter = 0;
-    
-    if (exercises && exercises.length > 0) {
-        exercises.forEach((exercise, index) => {
-            exerciseCounter++;
-            const exerciseHTML = `
-                <div class="exercise-item" data-exercise-index="${index}">
-                    <div class="form-row">
-                        <div class="form-group" style="flex: 2;">
-                            <label>Nome do Exercício</label>
-                            <input type="text" class="exercise-name" placeholder="Ex: Supino Reto" 
-                                   value="${exercise.name || ''}" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Sets</label>
-                            <input type="number" class="exercise-sets" min="1" max="10" 
-                                   value="${exercise.sets || 3}" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Reps</label>
-                            <input type="number" class="exercise-reps" min="1" max="50" 
-                                   value="${exercise.reps || 10}" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Peso (kg)</label>
-                            <input type="number" class="exercise-weight" min="0" step="0.5" 
-                                   value="${exercise.weight || 0}">
-                        </div>
-                        <div class="form-group" style="width: 40px;">
-                            <label>&nbsp;</label>
-                            <button type="button" class="remove-exercise-btn" 
-                                    ${exercises.length === 1 ? 'style="display: none;"' : ''}>
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
+
+    if (!exercises || exercises.length === 0) {
+        addExerciseField();
+        return;
+    }
+
+    exercises.forEach(exercise => {
+        exerciseCounter++;
+
+        const exerciseHTML = `
+            <div class="exercise-item" data-exercise-index="${exerciseCounter}">
+                <div class="form-row">
+                    <div class="form-group" style="flex: 2;">
+                        <label>Nome do Exercício</label>
+                        <input type="text" class="exercise-name" value="${exercise.name || ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Sets</label>
+                        <input type="number" class="exercise-sets" value="${exercise.sets || 3}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Reps</label>
+                        <input type="number" class="exercise-reps" value="${exercise.reps || 10}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Peso (kg)</label>
+                        <input type="number" class="exercise-weight" value="${exercise.weight || 0}">
+                    </div>
+                    <div class="form-group" style="width: 40px;">
+                        <label>&nbsp;</label>
+                        <button type="button" class="remove-exercise-btn" 
+                                ${exercises.length === 1 ? 'style="display: none;"' : ''}>
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
                 </div>
-            `;
-            
-            exercisesContainer.insertAdjacentHTML('beforeend', exerciseHTML);
-        });
-    } else {
-        // Adiciona um campo de exercício vazio
-        addExerciseField();
-    }
+            </div>
+        `;
+
+        exercisesContainer.insertAdjacentHTML('beforeend', exerciseHTML);
+    });
 }
 
 // Getting all user workouts from backend
@@ -423,7 +410,7 @@ async function createUserWorkout(workoutData) {
     }
 }
 
-// Updating workout in backend
+// Updating workout in backend 
 async function updateUserWorkout(workoutId, workoutData) {
     try {
         if (!token) {
@@ -450,6 +437,9 @@ async function updateUserWorkout(workoutId, workoutData) {
 
         const workout = await response.json();
         console.log('Treino atualizado com sucesso:', workout);
+        
+        await loadWorkouts();
+        
         return workout;
 
     } catch (error) {
@@ -478,6 +468,9 @@ async function deleteUserWorkout(workoutId) {
             throw new Error('Erro ao excluir treino');
         }
 
+        // IMPORTANTE: Após deletar, recarrega a lista
+        await loadWorkouts();
+        
         return true;
 
     } catch (error) {
@@ -492,7 +485,7 @@ function openWorkoutModalCreate() {
     workoutForm.reset();
     document.getElementById('workout-id').value = '';
     document.getElementById('workout-date').value = getTodayDate();
-    document.getElementById('workout-status').value = 'active'; // FORÇA ativo como padrão
+    document.getElementById('workout-status').value = 'active';
     
     // Reset exercise fields
     exercisesContainer.innerHTML = '';
@@ -504,20 +497,23 @@ function openWorkoutModalCreate() {
     editingWorkoutId = null;
 }
 
-// Open modal to edit the workout (same modal as the create one)
+// Open modal to edit the workout
 async function openWorkoutModalEdit(workoutId) {
     try {
         const workouts = await getUserWorkouts();
-        const workout = workouts.find(w => w.id === workoutId);
+        
+        // Converte para número para garantir comparação correta
+        const workout = workouts.find(w => Number(w.id) === Number(workoutId));
         
         if (!workout) {
-            alert('Treino não encontrado');
+            console.log('Workout not found. ID searched:', workoutId);
+            console.log('Available workouts:', workouts);
+            alert('Workout not found');
             return;
         }
-        
-        console.log('Carregando treino para edição:', workout);
-        
+
         modalTitle.textContent = "Editar Treino";
+
         document.getElementById('workout-id').value = workout.id;
         document.getElementById('workout-name').value = workout.title;
         document.getElementById('workout-type').value = workout.type;
@@ -525,17 +521,16 @@ async function openWorkoutModalEdit(workoutId) {
         document.getElementById('workout-date').value = workout.date;
         document.getElementById('workout-status').value = workout.status;
         document.getElementById('workout-description').value = workout.description || '';
-        
-        // Populate exercises fields
-        populateExercisesFields(workout.exercises);
-        
+
+        // Usa os exercícios que já estão no workout
+        populateExercisesFields(workout.exercises || []);
+
         workoutModal.classList.add('active');
-        document.getElementById('workout-name').focus();
         editingWorkoutId = workoutId;
-        
+
     } catch (error) {
-        console.error('Error loading workout for edit:', error);
-        alert('Erro ao carregar treino para edição');
+        console.error('Error opening edit modal:', error);
+        alert('Error loading workout');
     }
 }
 
@@ -552,7 +547,6 @@ async function loadWorkouts() {
         console.log('Treinos carregados:', workouts);
         
         let filteredWorkouts = workouts;
-        const today = new Date().toISOString().split('T')[0];
         
         if (currentFilter === 'active') {
             filteredWorkouts = workouts.filter(w => w.status === 'active');
@@ -562,6 +556,7 @@ async function loadWorkouts() {
             filteredWorkouts = workouts.filter(w => isFutureDate(w.date));
         }
         
+        // Chama renderização e estatísticas
         renderWorkouts(filteredWorkouts);
         updateStats(workouts);
         
@@ -601,6 +596,8 @@ function renderWorkouts(workouts) {
         const statusClass = workout.status === 'active' ? 'status-active' : 'status-inactive';
         const statusText = workout.status === 'active' ? 'Ativo' : 'Inativo';
         
+        const exercises = Array.isArray(workout.exercises) ? workout.exercises : [];
+        
         return `
             <div class="${cardClasses}">
                 <div class="workout-header">
@@ -617,15 +614,15 @@ function renderWorkouts(workouts) {
                     </div>
                 ` : ''}
                 
-                ${workout.exercises && workout.exercises.length > 0 ? `
+                ${exercises.length > 0 ? `
                     <div class="workout-exercises">
                         <h4>Exercícios:</h4>
                         <ul>
-                            ${workout.exercises.map(exercise => `
+                            ${exercises.map(exercise => `
                                 <li>
                                     <i class="fas fa-dumbbell"></i> 
                                     <div class="exercise-details">
-                                        <span class="exercise-name">${exercise.name}</span>
+                                        <span class="exercise-name">${exercise.name || 'Exercício'}</span>
                                         <span class="exercise-specs">
                                             ${exercise.sets || 0}x${exercise.reps || 0}
                                             ${exercise.weight && exercise.weight > 0 ? `@ ${exercise.weight}kg` : ''}
@@ -681,13 +678,12 @@ async function handleFormSubmit(e) {
         return;
     }
     
-    // CORRIGIDO: Estrutura correta dos dados
     const workoutData = {
         title: workoutName,
         type: document.getElementById('workout-type').value,
         duration: parseInt(workoutDuration),
         date: workoutDate,
-        status: workoutStatus, // Usa o valor do select
+        status: workoutStatus,
         description: document.getElementById('workout-description').value,
         exercises: exercises
     };
@@ -701,15 +697,21 @@ async function handleFormSubmit(e) {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
         
         let result;
+        
         if (editingWorkoutId) {
+            // Atualiza e já recarrega dentro da função
             result = await updateUserWorkout(editingWorkoutId, workoutData);
         } else {
+            // Cria novo e recarrega após
             result = await createUserWorkout(workoutData);
+            // Recarrega após criar
+            await loadWorkouts();
         }
     
-        await loadWorkouts();
+        // Fecha modal após sucesso
         closeWorkoutModal();
         
+        // Reabilita botão
         submitBtn.disabled = false;
         submitBtn.textContent = originalText;
         
@@ -729,7 +731,7 @@ async function deleteWorkout(workoutId) {
     
     try {
         await deleteUserWorkout(workoutId);
-        await loadWorkouts();
+
     } catch (error) {
         console.error('Error deleting workout:', error);
         alert('Erro ao excluir treino: ' + error.message);

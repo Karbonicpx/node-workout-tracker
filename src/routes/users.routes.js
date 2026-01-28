@@ -1,119 +1,284 @@
 const express = require('express');
 const authenticateToken = require('../middlewares/authenticateToken');
-const users = require('../data/users');
+const pool = require('../data/db');
 
 const router = express.Router();
 
 // Get authenticated user data
-router.get('/me', authenticateToken, (req, res) => {
-    const user = users.find(u => u.id === req.user.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+router.get('/me', authenticateToken, async (req, res) => {
 
-    res.json(user.toJSON());
+    try {
+        // Finding all useful data from the user
+        const result = await pool.query(
+            `
+            SELECT id, username, email, created_at 
+            FROM users 
+            WHERE id = $1;
+            `,
+            [req.user.id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Returning the user
+        return res.status(200).json(result.rows[0]);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+
 });
 
 // Get all workouts of authenticated user
-router.get('/me/workouts', authenticateToken, (req, res) => {
-    const user = users.find(u => u.id === req.user.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+router.get('/me/workouts', authenticateToken, async (req, res) => {
+    try {
+        // This query will find all relevant information from all the workouts that has the same user_id as the user id
+        const result = await pool.query(
+            `
+            SELECT 
+                id,
+                title,
+                type,
+                duration,
+                date,
+                status,
+                description,
+                created_at
+            FROM workouts
+            WHERE user_id = $1
+            ORDER BY date DESC;
+            `,
+            [req.user.id]
+        );
 
-    res.json(user.workouts);
+        // Returning all the workouts
+       return res.status(200).json(result.rows);
+    }
+    catch (error){
+        console.error('Error fetching workouts:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
 });
 
 // Add workout to authenticated user
-router.post('/me/workouts', authenticateToken, (req, res) => {
-    const user = users.find(u => u.id === req.user.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+router.post('/me/workouts', authenticateToken, async (req, res) => {
 
-    // Corrigido: Gera ID único e cria workout com estrutura completa
+    const { title, type, duration, date, status, description } = req.body;
+    try {
 
-    // If it is the first workout, set as 1, if not, set as the current length of workouts array + 1
-    const workoutId = user.workouts.length > 0 
-        ? Math.max(...user.workouts.map(w => w.id)) + 1 
-        : 1;
-    
+        // Inserting new workout to the database
+        const result = await pool.query(
+            `INSERT INTO workouts (user_id, title, type, duration, date, status, description)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             RETURNING id, user_id, title, type, duration, date, status, description;`,
+            [req.user.id, title, type, duration, date, status, description]
+        );
 
-    const newWorkout = {
-        id: workoutId,
-        title: req.body.title,
-        type: req.body.type,
-        duration: req.body.duration,
-        date: req.body.date,
-        status: req.body.status,  
-        description: req.body.description || '',
-        exercises: req.body.exercises || []  
-    };
+        res.status(201).json(result.rows[0]);
 
-    user.workouts.push(newWorkout);
-    res.status(201).json(newWorkout);  // Returns new workout
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
 // Updating workout
-router.put('/me/workouts/:workoutId', authenticateToken, (req, res) => {
-    const user = users.find(u => u.id === req.user.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+router.put('/me/workouts/:workoutId', authenticateToken, async (req, res) => {
 
-    const workoutId = parseInt(req.params.workoutId);
-    const workoutIndex = user.workouts.findIndex(w => w.id === workoutId);
 
-    if (workoutIndex === -1) {
-        return res.status(404).json({ message: 'Workout not found' });
+    const { title, type, duration, date, status, description } = req.body;
+    try {
+
+        // Updating workout in the database, based on the workout we want to change (workoutId) and if the user id is the same as user_id
+        const result = await pool.query(
+            `UPDATE workouts
+             SET
+                title = $1,
+                type = $2,
+                duration = $3,
+                date = $4,
+                status = $5,
+                description = $6
+             WHERE id = $7
+             AND user_id = $8
+             RETURNING
+                id,
+                user_id,
+                title,
+                type,
+                duration,
+                date,
+                status,
+                description;`,
+            [title, type, duration, date, status, description, req.params.workoutId, req.user.id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                message: 'Workout not found or does not belong to user'
+            });
+        }
+
+        res.status(200).json(result.rows[0]);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
     }
 
-    // Updating workout using workoutIndex to find it and setting his id to the existent id
-    const updatedWorkout = {
-        ...user.workouts[workoutIndex],  
-        ...req.body,                      
-        id: workoutId                     
-    };
-
-    user.workouts[workoutIndex] = updatedWorkout;
-    res.json(updatedWorkout);  
 });
 
 // Delete workout
-router.delete('/me/workouts/:workoutId', authenticateToken, (req, res) => {
-    const user = users.find(u => u.id === req.user.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+router.delete('/me/workouts/:workoutId', authenticateToken,  async (req, res) => {
 
-    const workoutId = parseInt(req.params.workoutId);
-    const workoutIndex = user.workouts.findIndex(w => w.id === workoutId);
+    try {
 
-    if (workoutIndex === -1) {
-        return res.status(404).json({ message: 'Workout not found' });
+        // Updating workout in the database, based on the workout we want to change (workoutId) and if the user id is the same as user_id
+        const result = await pool.query(
+            `DELETE FROM workouts
+             WHERE id = $1
+             AND user_id = $2
+             RETURNING id, user_id;`,
+            [req.params.workoutId, req.user.id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                message: 'Workout not found or does not belong to user'
+            });
+        }
+
+        res.status(204).json(result.rows[0]);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
     }
+});
 
-    user.workouts.splice(workoutIndex, 1);
-    res.json({ message: 'Workout deleted' });
+// Getting exercises from the workout
+router.get('/me/workouts/:workoutId/exercises', authenticateToken, async (req, res) => {
+
+    try {
+        const result = await pool.query(
+            `
+            SELECT 
+                id,
+                name,
+                ex_sets,
+                reps,
+                weight
+            FROM exercises
+            WHERE workout_id = $1;
+            `,
+            [req.params.workoutId]
+        );
+
+        // Returning all of the exercises
+        return res.status(200).json(result.rows);
+    }
+    catch (error){
+        console.error('Error fetching exercises:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
 });
 
 // Adding exercises to the workout
-router.post('/me/workouts/:workoutId/exercises', authenticateToken, (req, res) => {
-    const user = users.find(u => u.id === req.user.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+router.post('/me/workouts/:workoutId/exercises', authenticateToken, async (req, res) => {
 
-    const workoutId = parseInt(req.params.workoutId);
-    const workout = user.workouts.find(w => w.id === workoutId);
+    const { name, ex_sets, reps, weight } = req.body;
+    try {
 
-    if (!workout) {
-        return res.status(404).json({ message: 'Workout not found' });
+        // Inserting new exercise associated to a workout in the database
+        const result = await pool.query(
+            `INSERT INTO exercises (workout_id, name, ex_sets, reps, weight)
+             SELECT id, $2, $3, $4, $5
+             FROM workouts
+             WHERE id = $1
+             RETURNING workout_id, name, ex_sets, reps, weight;
+            `,
+            [req.params.workoutId, name, ex_sets, reps, weight]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                message: 'Workout not found'
+            });
+        }
+
+        res.status(201).json(result.rows[0]);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Updating exercise
+router.put('/me/workouts/:workoutId/exercises/:exerciseId', authenticateToken, async (req, res) => {
+
+
+    const { name, ex_sets, reps, weight } = req.body;
+    try {
+
+        // Updating exercise in the database
+        const result = await pool.query(
+            `UPDATE exercises
+             SET
+                name = $1,
+                ex_sets = $2,
+                reps = $3,
+                weight = $4
+             WHERE id = $5
+             AND workout_id = $6
+             RETURNING *;`,
+            [name, ex_sets, reps, weight, req.params.exerciseId, req.params.workoutId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                message: 'Exercise not found'
+            });
+        }
+
+        res.status(200).json(result.rows[0]);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
     }
 
-    // Generate Id for new exercise
-    const exerciseId = workout.exercises.length > 0
-        ? Math.max(...workout.exercises.map(e => e.id)) + 1
-        : 1;
+});
 
-    const newExercise = {
-        id: exerciseId,
-        name: req.body.name,
-        sets: req.body.sets,
-        reps: req.body.reps,
-        weight: req.body.weight
-    };
+// Deleting exercises in a workout
+router.delete('/me/workouts/:workoutId/exercises/:exerciseId', authenticateToken,  async (req, res) => {
 
-    workout.exercises.push(newExercise);
-    res.status(201).json(newExercise);
+    try {
+
+        // Deleting exercise in the database, using the id to find it and the workoutId to avoid another user deleting it
+        const result = await pool.query(
+            `DELETE FROM exercises
+             WHERE id = $1
+             AND workout_id = $2
+             RETURNING id, workout_id;`,
+            [req.params.exerciseId, req.params.workoutId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                message: 'Exercise not found'
+            });
+        }
+
+        res.status(204).json(result.rows[0]);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
 module.exports = router;

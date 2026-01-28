@@ -13,5 +13,5 @@ app.use('/auth', require('./routes/auth.routes.js'));
 app.use('/users', require('./routes/users.routes.js'));
 
 app.listen(3000, () => {
-    console.log('\nServer running on port 3000\n');
+    console.log('\nServer running\n');
 });
